@@ -1,5 +1,15 @@
 # 企业内网测速系统 v2.1
 
+<img width="1913" height="955" alt="1" src="https://github.com/user-attachments/assets/fd20c83f-9ad6-443c-937f-5bcbd3464c7b" />
+<img width="1902" height="960" alt="2" src="https://github.com/user-attachments/assets/978eaca1-9986-4fd1-ade2-d65f4f1da0a6" />
+<img width="1914" height="954" alt="3" src="https://github.com/user-attachments/assets/09b636de-ebd7-47e1-9c44-86b2c0f5c140" />
+<img width="1910" height="955" alt="4" src="https://github.com/user-attachments/assets/3177b11f-4f69-407c-8a65-53c26472a8ec" />
+<img width="1917" height="951" alt="5" src="https://github.com/user-attachments/assets/7c57c89c-ebf0-4f45-baf6-312d9049f580" />
+<img width="1911" height="954" alt="6" src="https://github.com/user-attachments/assets/597274f4-6694-46bd-855e-751d40e4d37d" />
+<img width="1885" height="955" alt="7" src="https://github.com/user-attachments/assets/72d82749-3089-4f1a-a0b6-ca44549e0bc3" />
+<img width="1901" height="952" alt="8" src="https://github.com/user-attachments/assets/90a21461-5ad1-42fa-8733-8fd8a7bc92cb" />
+
+
 > **作者：CTF_无白** [https://github.com/ctfwubai](https://github.com/ctfwubai)
 
 基于 OpenSpeedTest 引擎二次开发的企业级内网带宽测试平台。集成管理后台、SQLite 持久化存储、设备指纹识别、PDF/HTML 专业报告导出、性能趋势分析等功能，无需外部数据库依赖。
