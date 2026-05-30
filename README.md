@@ -297,3 +297,13 @@ SQLite 数据库文件在 `data/speedtest.db`，同时定期备份为 `data/resu
 MIT License - 基于 OpenSpeedTest 构建
 
 OpenSpeedTest: https://github.com/openspeedtest/Speed-Test
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=ctfwubai%2Fct-lottery%2Cctfwubai%2FSpeed-Test-main-background-management&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=ctfwubai/ct-lottery%2Cctfwubai/Speed-Test-main-background-management&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=ctfwubai/ct-lottery%2Cctfwubai/Speed-Test-main-background-management&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=ctfwubai/ct-lottery%2Cctfwubai/Speed-Test-main-background-management&type=date&legend=top-left" />
+ </picture>
+</a>
