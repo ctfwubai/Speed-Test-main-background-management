@@ -1,0 +1,10 @@
+node_modules
+.git
+.vs
+data/*.json
+download
+upload
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*

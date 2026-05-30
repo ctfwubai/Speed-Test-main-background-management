@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 - 内网测速系统后台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f0f2f5;
+      color: #333;
+    }
+    .navbar {
+      background: white;
+      border-bottom: 1px solid #e9ecef;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar .brand { font-size: 18px; font-weight: 700; color: #333; }
+    .navbar .brand span { color: #667eea; }
+    .navbar .nav-right { display: flex; align-items: center; gap: 16px; font-size: 14px; }
+    .navbar .nav-right a { color: #667eea; text-decoration: none; cursor: pointer; }
+    .navbar .nav-right a:hover { text-decoration: underline; }
+    .navbar .nav-right .logout { color: #e03131; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .stat-card .label { font-size: 13px; color: #868e96; margin-bottom: 4px; }
+    .stat-card .value { font-size: 28px; font-weight: bold; color: #212529; }
+    .stat-card .sub { font-size: 12px; color: #adb5bd; margin-top: 4px; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: white; border-radius: 12px; padding: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .tab { padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #495057; transition: all 0.2s; border: none; background: none; }
+    .tab:hover { background: #f1f3f5; }
+    .tab.active { background: #667eea; color: white; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 16px; }
+    .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e9ecef; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; color: #868e96; font-weight: 600; border-bottom: 2px solid #e9ecef; white-space: nowrap; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f1f3f5; }
+    tr:hover td { background: #f8f9fa; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .badge-dl { color: #339af0; background: #e7f5ff; }
+    .badge-ul { color: #20c997; background: #e6fcf5; }
+    .badge-ping { color: #fcc419; background: #fff9db; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; font-size: 13px; }
+    .pagination button { padding: 6px 14px; border: 1px solid #dee2e6; border-radius: 6px; background: white; cursor: pointer; font-size: 13px; }
+    .pagination button:hover { background: #f1f3f5; }
+    .pagination button:disabled { opacity: 0.4; cursor: default; }
+    .pagination .info { color: #868e96; }
+    .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+    .search-bar input { flex: 1; padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 13px; }
+    .search-bar button { padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    .search-bar button:hover { background: #5a6fd6; }
+    .action-btn { padding: 4px 10px; border-radius: 4px; border: 1px solid #dee2e6; background: white; cursor: pointer; font-size: 12px; text-decoration: none; color: #333; }
+    .action-btn:hover { background: #f1f3f5; }
+    .action-btn.danger { color: #e03131; border-color: #e03131; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; border-radius: 16px; padding: 32px; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; }
+    .modal h2 { font-size: 18px; margin-bottom: 16px; }
+    .modal .close { float: right; border: none; background: none; font-size: 24px; cursor: pointer; color: #868e96; }
+    .modal table { margin-top: 12px; }
+    .empty-state { text-align: center; padding: 40px; color: #868e96; font-size: 14px; }
+    .ip-cell { font-family: "SF Mono", "Fira Code", monospace; font-size: 12px; }
+    .copy-btn { cursor: pointer; color: #667eea; font-size: 12px; margin-left: 4px; }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .filter-row select, .filter-row input { padding: 6px 10px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 13px; }
+    @media (max-width: 768px) {
+      .container { padding: 12px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .tabs { flex-wrap: wrap; }
+      .tab { flex: 1; text-align: center; font-size: 12px; padding: 8px 12px; }
+      table { font-size: 12px; }
+      th, td { padding: 6px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand"><span>Speed</span>Test 后台</div>
+    <div class="nav-right">
+      <a href="/" target="_blank">测速工具</a>
+      <a onclick="openChangePwd()">修改密码</a>
+      <a class="logout" onclick="logout()">退出登录</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 统计概览 -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="label">测速次数</div><div class="value" id="statTests">-</div><div class="sub">总测试数</div></div>
+      <div class="stat-card"><div class="label">独立 IP</div><div class="value" id="statIPs">-</div><div class="sub">不同客户端</div></div>
+      <div class="stat-card"><div class="label">平均下载</div><div class="value" id="statAvgDL">-</div><div class="sub">Mbps</div></div>
+      <div class="stat-card"><div class="label">平均上传</div><div class="value" id="statAvgUL">-</div><div class="sub">Mbps</div></div>
+      <div class="stat-card"><div class="label">平均延迟</div><div class="value" id="statAvgPing">-</div><div class="sub">ms</div></div>
+      <div class="stat-card"><div class="label">今日测试</div><div class="value" id="statRecent">-</div><div class="sub">过去 24 小时</div></div>
+    </div>
+
+    <!-- 选项卡 -->
+    <div class="tabs" id="tabs">
+      <button class="tab active" onclick="switchTab('results')">测速记录</button>
+      <button class="tab" onclick="switchTab('logs')">访问日志</button>
+      <button class="tab" onclick="switchTab('ips')">IP 统计</button>
+      <button class="tab" onclick="switchTab('devices')">设备管理</button>
+      <button class="tab" onclick="switchTab('reports')">报告管理</button>
+      <button class="tab" onclick="switchTab('trends')">趋势分析</button>
+      <button class="tab" onclick="switchTab('manage')">数据管理</button>
+    </div>
+
+    <!-- 测速记录 -->
+    <div class="panel active" id="panel-results">
+      <div class="card">
+        <div class="search-bar">
+          <input type="text" id="resultsSearch" placeholder="搜索 IP 地址..." onkeydown="if(event.key==='Enter')loadResults()">
+          <input type="date" id="resultsStartDate" onchange="loadResults()" style="padding:8px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+          <span style="color:#868e96;font-size:13px;">至</span>
+          <input type="date" id="resultsEndDate" onchange="loadResults()" style="padding:8px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+          <button onclick="resetResultsFilter()" style="background:#868e96;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;padding:8px 14px;">重置</button>
+          <button onclick="loadResults()">搜索</button>
+          <button onclick="exportAllCSV()" style="background:#20c997;">导出 CSV</button>
+        </div>
+        <div id="resultsTable"><div class="empty-state">加载中...</div></div>
+        <div class="pagination" id="resultsPagination"></div>
+      </div>
+    </div>
+
+    <!-- 访问日志 -->
+    <div class="panel" id="panel-logs">
+      <div class="card">
+        <h2 style="font-size:15px;font-weight:600;margin-bottom:12px;color:#333;">最新 30 条访问记录</h2>
+        <div id="logsTable"><div class="empty-state">加载中...</div></div>
+      </div>
+    </div>
+
+    <!-- IP 统计 -->
+    <div class="panel" id="panel-ips">
+      <div class="card">
+        <h2>IP 地址统计</h2>
+        <div class="search-bar">
+          <input type="text" id="ipsSearch" placeholder="搜索 IP 地址..." onkeydown="if(event.key==='Enter')loadIPs()">
+          <input type="date" id="ipsStartDate" onchange="loadIPs()" style="padding:8px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+          <span style="color:#868e96;font-size:13px;">至</span>
+          <input type="date" id="ipsEndDate" onchange="loadIPs()" style="padding:8px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+          <button onclick="resetIPsFilter()" style="background:#868e96;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;padding:8px 14px;">重置</button>
+          <button onclick="loadIPs()">搜索</button>
+        </div>
+        <div id="ipsTable"><div class="empty-state">加载中...</div></div>
+      </div>
+    </div>
+
+    <!-- 设备管理 -->
+    <div class="panel" id="panel-devices">
+      <div class="card">
+        <h2>设备指纹统计</h2>
+        <p style="color:#868e96;font-size:13px;margin-bottom:16px;">
+          设备指纹基于浏览器 Canvas 指纹 + 硬件特征生成，用于识别同一设备。同一设备在不同网络环境下会显示相同的设备 ID。注意：每次清除浏览器数据会生成新的设备 ID。
+        </p>
+        <div class="search-bar">
+          <input type="date" id="devicesStartDate" style="padding:8px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+          <span style="color:#868e96;font-size:13px;">至</span>
+          <input type="date" id="devicesEndDate" style="padding:8px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+          <button onclick="loadDevices()" style="background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;padding:8px 16px;">确定</button>
+          <button onclick="resetDevicesFilter()" style="background:#868e96;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;padding:8px 14px;">重置</button>
+        </div>
+        <div id="devicesTable"><div class="empty-state">加载中...</div></div>
+      </div>
+    </div>
+
+    <!-- 报告管理 -->
+    <div class="panel" id="panel-reports">
+      <div class="card">
+        <h2>导出报告</h2>
+        <p style="color:#868e96;font-size:13px;margin-bottom:16px;">
+          可导出所有测速记录为 CSV 格式，或查看每条记录的详细报告。
+        </p>
+        <div class="search-bar">
+          <input type="text" id="reportsSearch" placeholder="搜索 IP 地址..." onkeydown="if(event.key==='Enter')loadReportList()">
+          <input type="date" id="reportsStartDate" onchange="loadReportList()" style="padding:8px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+          <span style="color:#868e96;font-size:13px;">至</span>
+          <input type="date" id="reportsEndDate" onchange="loadReportList()" style="padding:8px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+          <button onclick="resetReportsFilter()" style="background:#868e96;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;padding:8px 14px;">重置</button>
+          <button onclick="loadReportList()">搜索</button>
+          <button onclick="exportAllCSV()" style="background:#20c997;">导出全部 CSV</button>
+          <button onclick="window.open('/api/export/summary-report?days=7','_blank')" style="background:#764ba2;">周汇总报告</button>
+          <button onclick="window.open('/api/export/summary-report?days=30','_blank')" style="background:#667eea;">月汇总报告</button>
+        </div>
+        <div id="reportsList"><div class="empty-state">加载中...</div></div>
+        <div class="pagination" id="reportsPagination"></div>
+      </div>
+    </div>
+
+    <!-- 趋势分析 -->
+    <div class="panel" id="panel-trends">
+      <div class="card">
+        <h2>网络性能趋势</h2>
+        <div class="filter-row">
+          <select id="trendDays" onchange="loadTrends()">
+            <option value="7">最近 7 天</option>
+            <option value="14">最近 14 天</option>
+            <option value="30" selected>最近 30 天</option>
+            <option value="90">最近 90 天</option>
+          </select>
+          <span id="trendSummary" style="font-size:13px;color:#868e96;line-height:36px;"></span>
+        </div>
+        <div id="trendChart" style="width:100%;height:360px;position:relative;">
+          <div class="empty-state">加载趋势数据中...</div>
+        </div>
+        <div id="trendTable" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <!-- 数据管理 -->
+    <div class="panel" id="panel-manage">
+      <div class="card">
+        <h2>数据统计概览</h2>
+        <div id="manageStats"><div class="empty-state">加载中...</div></div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="window.open('/api/export/logs-csv','_blank')" style="padding:8px 16px;background:#339af0;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">导出访问日志 CSV</button>
+          <button onclick="window.open('/api/export/csv','_blank')" style="padding:8px 16px;background:#20c997;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">导出全部测速数据 CSV</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>数据清理（按时间）</h2>
+        <p style="color:#868e96;font-size:13px;margin-bottom:12px;">
+          清理指定天数之前的旧数据。此操作不可撤销，请谨慎操作。
+        </p>
+        <div class="filter-row">
+          <select id="cleanupDays">
+            <option value="30">30 天前</option>
+            <option value="90" selected>90 天前</option>
+            <option value="180">180 天前</option>
+            <option value="365">365 天前</option>
+          </select>
+          <button onclick="cleanupData()" style="padding:8px 20px;background:#e03131;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">执行清理</button>
+        </div>
+        <div id="cleanupResult" style="font-size:13px;color:#868e96;margin-top:8px;"></div>
+      </div>
+      <div class="card" style="border: 2px solid #e03131;">
+        <h2 style="color:#e03131;">重置所有数据</h2>
+        <p style="color:#e03131;font-size:13px;margin-bottom:12px;font-weight:500;">
+          ⚠ 此操作将永久删除所有测速记录、访问日志和设备数据，不可恢复！
+        </p>
+        <button onclick="resetAllData()" style="padding:10px 24px;background:#e03131;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;">重置所有数据</button>
+        <div id="resetResult" style="font-size:13px;color:#868e96;margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看详情弹窗 -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal">
+      <button class="close" onclick="closeModal()">&times;</button>
+      <h2>测速详情</h2>
+      <div id="detailContent">加载中...</div>
+    </div>
+  </div>
+
+  <!-- 修改密码弹窗 -->
+  <div class="modal-overlay" id="changePwdModal">
+    <div class="modal" style="max-width:400px;">
+      <button class="close" onclick="closeChangePwd()">&times;</button>
+      <h2>修改密码</h2>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="display:block;font-size:13px;margin-bottom:4px;color:#495057;">原密码</label>
+        <input type="password" id="oldPwd" style="width:100%;padding:10px 12px;border:2px solid #e9ecef;border-radius:8px;font-size:14px;">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="display:block;font-size:13px;margin-bottom:4px;color:#495057;">新密码</label>
+        <input type="password" id="newPwd" style="width:100%;padding:10px 12px;border:2px solid #e9ecef;border-radius:8px;font-size:14px;">
+      </div>
+      <div id="changePwdMsg" style="color:#e03131;font-size:13px;margin-bottom:8px;"></div>
+      <button onclick="changePassword()" style="width:100%;padding:12px;background:#667eea;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;">确认修改</button>
+    </div>
+  </div>
+
+  <script>
+    // ============================
+    // 分页状态
+    // ============================
+    const state = {
+      resultsPage: 1, resultsIP: '',
+      reportsPage: 1, reportsIP: '',
+    };
+
+    // ============================
+    // 初始化
+    // ============================
+    document.addEventListener('DOMContentLoaded', () => {
+      // 默认显示今天的数据（使用本地日期，避免时区问题）
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      document.getElementById('resultsStartDate').value = today;
+      document.getElementById('resultsEndDate').value = today;
+      document.getElementById('devicesStartDate').value = today;
+      document.getElementById('devicesEndDate').value = today;
+      document.getElementById('reportsStartDate').value = today;
+      document.getElementById('reportsEndDate').value = today;
+      loadStats();
+      loadResults();
+    });
+
+    // 自动刷新统计（每 30 秒）
+    setInterval(loadStats, 30000);
+
+    // ============================
+    // 选项卡切换
+    // ============================
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      const tabBtn = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes(name));
+      if (tabBtn) tabBtn.classList.add('active');
+      const panel = document.getElementById(`panel-${name}`);
+      if (panel) panel.classList.add('active');
+
+      if (name === 'logs') loadLogs();
+      if (name === 'ips') loadIPs();
+      if (name === 'devices') loadDevices();
+      if (name === 'reports') loadReportList();
+      if (name === 'trends') loadTrends();
+      if (name === 'manage') loadManageStats();
+    }
+
+    // ============================
+    // 统计概览
+    // ============================
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('statTests').textContent = data.totalTests;
+        document.getElementById('statIPs').textContent = data.uniqueIPs;
+        document.getElementById('statAvgDL').textContent = data.avgDownload + ' Mbps';
+        document.getElementById('statAvgUL').textContent = data.avgUpload + ' Mbps';
+        document.getElementById('statAvgPing').textContent = data.avgPing + ' ms';
+        document.getElementById('statRecent').textContent = data.recentTests;
+      } catch (e) {}
+    }
+
+    // ============================
+    // 测速记录
+    // ============================
+    async function loadResults() {
+      const ip = document.getElementById('resultsSearch').value.trim();
+      state.resultsIP = ip;
+      state.resultsPage = 1;
+      await fetchResults();
+    }
+
+    function resetResultsFilter() {
+      document.getElementById('resultsSearch').value = '';
+      document.getElementById('resultsStartDate').value = '';
+      document.getElementById('resultsEndDate').value = '';
+      state.resultsPage = 1;
+      state.resultsIP = '';
+      loadResults();
+    }
+
+    async function fetchResults() {
+      const { resultsPage: page, resultsIP: ip } = state;
+      const params = new URLSearchParams({ page, pageSize: 20 });
+      if (ip) params.set('ip', ip);
+      const sd = document.getElementById('resultsStartDate').value;
+      const ed = document.getElementById('resultsEndDate').value;
+      const hasDateFilter = sd || ed;
+      // 将本地日期转为 UTC 时间范围（修正时区偏移）
+      if (sd) {
+        const startUTC = new Date(sd + 'T00:00:00').toISOString();
+        params.set('startDate', startUTC);
+      }
+      if (ed) {
+        const endUTC = new Date(ed + 'T23:59:59.999').toISOString();
+        params.set('endDate', endUTC);
+      }
+
+      try {
+        const res = await fetch(`/api/results?${params}`);
+        const data = await res.json();
+        // 如果当天没数据且启用了日期筛选，自动切到全部日期
+        if (hasDateFilter && (!data.results || data.results.length === 0)) {
+          document.getElementById('resultsStartDate').value = '';
+          document.getElementById('resultsEndDate').value = '';
+          state.resultsPage = 1;
+          const allParams = new URLSearchParams({ page: 1, pageSize: 20 });
+          if (ip) allParams.set('ip', ip);
+          const res2 = await fetch(`/api/results?${allParams}`);
+          const data2 = await res2.json();
+          renderResultsTable(data2);
+          renderPagination('resultsPagination', data2, (p) => {
+            state.resultsPage = p;
+            fetchResults();
+          });
+          return;
+        }
+        renderResultsTable(data);
+        renderPagination('resultsPagination', data, (p) => {
+          state.resultsPage = p;
+          fetchResults();
+        });
+      } catch (e) {
+        document.getElementById('resultsTable').innerHTML = '<div class="empty-state">加载失败</div>';
+      }
+    }
+
+    function renderResultsTable(data) {
+      const container = document.getElementById('resultsTable');
+      if (!data.results || data.results.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无测速记录</div>';
+        return;
+      }
+
+      // 批量选择
+      window._selectedIds = [];
+      window.toggleSelectAll = function() {
+        const check = document.querySelectorAll('.result-check');
+        const all = document.getElementById('selectAllCheck').checked;
+        check.forEach(c => { c.checked = all; });
+        window.updateBatchBtn();
+      };
+      window.updateBatchBtn = function() {
+        const checks = document.querySelectorAll('.result-check:checked');
+        const ids = Array.from(checks).map(c => c.value);
+        window._selectedIds = ids;
+        document.getElementById('selectedCount').textContent = ids.length;
+        document.getElementById('batchDownloadBtn').disabled = ids.length === 0;
+      };
+      window.batchDownloadPDF = async function() {
+        const ids = window._selectedIds;
+        if (ids.length === 0) return alert('请先选择要导出的记录');
+        try {
+          const res = await fetch('/api/export/batch-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids }),
+          });
+          if (!res.ok) { const d = await res.json(); alert(d.error || '下载失败'); return; }
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = '批量测速报告_' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '') + '.pdf';
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch(e) { alert('批量下载失败'); }
+      }
+
+      let html = `<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+        <label style="font-size:13px;color:#495057;display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" id="selectAllCheck" onchange="toggleSelectAll()">
+          全选
+        </label>
+        <button onclick="batchDownloadPDF()" id="batchDownloadBtn" disabled style="padding:5px 14px;background:#764ba2;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
+          批量下载 PDF (<span id="selectedCount">0</span>)
+        </button>
+      </div>
+      <table>
+        <thead><tr>
+          <th style="width:30px"></th>
+          <th>时间</th>
+          <th>IP 地址</th>
+          <th>测速位置</th>
+          <th>信息点编号</th>
+          <th>下载</th>
+          <th>上传</th>
+          <th>延迟</th>
+          <th>抖动</th>
+          <th>操作</th>
+        </tr></thead><tbody>`;
+
+      data.results.forEach(r => {
+        const time = new Date(r.time).toLocaleString('zh-CN');
+        const loc = r.location || '';
+        const pid = r.pointId || '';
+        html += `<tr>
+          <td><input type="checkbox" class="result-check" value="${r.id}" onchange="updateBatchBtn()"></td>
+          <td style="white-space:nowrap;font-size:12px;">${time}</td>
+          <td class="ip-cell">${r.ip}</td>
+          <td style="font-size:12px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(loc)}">${escapeHtml(loc) || '-'}</td>
+          <td style="font-size:12px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(pid)}">${escapeHtml(pid) || '-'}</td>
+          <td><span class="badge badge-dl">${r.downloadSpeed.toFixed(1)} Mbps</span></td>
+          <td><span class="badge badge-ul">${r.uploadSpeed.toFixed(1)} Mbps</span></td>
+          <td><span class="badge badge-ping">${r.ping.toFixed(1)} ms</span></td>
+          <td>${r.jitter.toFixed(1)} ms</td>
+          <td>
+            <a class="action-btn" href="javascript:void(0)" onclick="viewDetail('${r.id}')">详情</a>
+            <a class="action-btn" href="javascript:void(0)" onclick="window.open('/api/export/html-report/${r.id}','_blank')">HTML</a>
+            <a class="action-btn" href="javascript:void(0)" onclick="exportReport('${r.id}')">PDF</a>
+          </td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 访问日志（仅显示最新 30 条）
+    // ============================
+    async function loadLogs() {
+      try {
+        const res = await fetch('/api/logs?pageSize=30');
+        const data = await res.json();
+        const container = document.getElementById('logsTable');
+        if (!data.logs || data.logs.length === 0) {
+          container.innerHTML = '<div class="empty-state">暂无访问日志</div>';
+          return;
+        }
+        let html = `<table>
+          <thead><tr><th>时间</th><th>IP 地址</th><th>方法</th><th>路径</th><th>用户代理</th></tr></thead><tbody>`;
+        data.logs.forEach(l => {
+          const time = new Date(l.time).toLocaleString('zh-CN');
+          html += `<tr>
+            <td style="white-space:nowrap;font-size:12px;">${time}</td>
+            <td class="ip-cell">${l.ip}</td>
+            <td>${l.method}</td>
+            <td style="font-size:12px;">${l.path}</td>
+            <td style="font-size:11px;color:#868e96;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(l.ua)}">${escapeHtml(l.ua)}</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (e) {
+        document.getElementById('logsTable').innerHTML = '<div class="empty-state">加载失败</div>';
+      }
+    }
+
+    // ============================
+    // IP 统计
+    // ============================
+    async function loadIPs() {
+      try {
+        const ip = document.getElementById('ipsSearch').value.trim();
+        const sd = document.getElementById('ipsStartDate').value;
+        const ed = document.getElementById('ipsEndDate').value;
+        const params = new URLSearchParams();
+        if (ip) params.set('ip', ip);
+        if (sd) params.set('startDate', new Date(sd + 'T00:00:00').toISOString());
+        if (ed) params.set('endDate', new Date(ed + 'T23:59:59.999').toISOString());
+        const qs = params.toString();
+        const res = await fetch(`/api/unique-ips${qs ? '?' + qs : ''}`);
+        const data = await res.json();
+        renderIPsTable(data);
+      } catch (e) {
+        document.getElementById('ipsTable').innerHTML = '<div class="empty-state">加载失败</div>';
+      }
+    }
+
+    function resetIPsFilter() {
+      document.getElementById('ipsSearch').value = '';
+      document.getElementById('ipsStartDate').value = '';
+      document.getElementById('ipsEndDate').value = '';
+      loadIPs();
+    }
+
+    function renderIPsTable(data) {
+      const container = document.getElementById('ipsTable');
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无数据</div>';
+        return;
+      }
+
+      let html = `<table>
+        <thead><tr><th>IP 地址</th><th>测速次数</th><th>访问次数</th><th>平均下载</th><th>最近测试</th><th>操作</th></tr></thead><tbody>`;
+
+      data.forEach(ip => {
+        const lastTest = ip.lastTest ? new Date(ip.lastTest).toLocaleString('zh-CN') : '-';
+        html += `<tr>
+          <td class="ip-cell">${ip.ip}</td>
+          <td>${ip.testCount}</td>
+          <td>${ip.visitCount}</td>
+          <td>${ip.avgDownload} Mbps</td>
+          <td style="font-size:12px;">${lastTest}</td>
+          <td><a class="action-btn" href="javascript:void(0)" onclick="filterByIP('${ip.ip}')">查看记录</a></td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function filterByIP(ip) {
+      switchTab('results');
+      document.getElementById('resultsSearch').value = ip;
+      loadResults();
+    }
+
+    // ============================
+    // 设备管理
+    // ============================
+    async function loadDevices() {
+      try {
+        const sd = document.getElementById('devicesStartDate').value;
+        const ed = document.getElementById('devicesEndDate').value;
+        let url = '/api/devices';
+        const params = [];
+        if (sd) {
+          const startUTC = new Date(sd + 'T00:00:00').toISOString();
+          params.push('startDate=' + encodeURIComponent(startUTC));
+        }
+        if (ed) {
+          const endUTC = new Date(ed + 'T23:59:59.999').toISOString();
+          params.push('endDate=' + encodeURIComponent(endUTC));
+        }
+        if (params.length) url += '?' + params.join('&');
+
+        const res = await fetch(url);
+        const data = await res.json();
+        renderDevicesTable(data);
+      } catch (e) {
+        document.getElementById('devicesTable').innerHTML = '<div class="empty-state">加载失败</div>';
+      }
+    }
+
+    function resetDevicesFilter() {
+      document.getElementById('devicesStartDate').value = '';
+      document.getElementById('devicesEndDate').value = '';
+      loadDevices();
+    }
+
+    function renderDevicesTable(data) {
+      const container = document.getElementById('devicesTable');
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无设备数据（需要用户完成一次测速后才会采集）</div>';
+        return;
+      }
+
+      let html = `<table>
+        <thead><tr>
+          <th>设备 ID</th>
+          <th>平台/系统</th>
+          <th>核心数</th>
+          <th>内存</th>
+          <th>关联 IP</th>
+          <th>测速次数</th>
+          <th>平均下载</th>
+          <th>首次发现</th>
+          <th>最近活动</th>
+          <th>操作</th>
+        </tr></thead><tbody>`;
+
+      data.forEach(d => {
+        html += `<tr>
+          <td class="ip-cell" style="font-size:11px;word-break:break-all;">${d.deviceId}</td>
+          <td style="white-space:nowrap;">${d.platform}</td>
+          <td style="text-align:center;">${d.cores}</td>
+          <td style="text-align:center;">${d.memory}</td>
+          <td class="ip-cell">${d.ips.join(', ')}</td>
+          <td style="text-align:center;">${d.testCount}</td>
+          <td style="white-space:nowrap;">${d.avgDownload} Mbps</td>
+          <td style="font-size:11px;white-space:nowrap;">${new Date(d.firstSeen).toLocaleString('zh-CN')}</td>
+          <td style="font-size:11px;white-space:nowrap;">${new Date(d.lastSeen).toLocaleString('zh-CN')}</td>
+          <td style="text-align:center;">
+            <a class="action-btn" href="javascript:void(0)" onclick="filterByDevice('${d.deviceId}')">记录</a>
+          </td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function filterByDevice(deviceId) {
+      switchTab('reports');
+      document.getElementById('reportsSearch').value = '';
+      // 在结果中搜索设备 ID 不是很好做，直接切换到测速记录并提示
+      switchTab('results');
+      alert('请在详情中查看设备关联记录。点击某条测速记录的"详情"按钮，查看"同一设备的历史记录"。');
+    }
+
+    // ============================
+    // 报告管理
+    // ============================
+    async function loadReportList() {
+      const ip = document.getElementById('reportsSearch').value.trim();
+      state.reportsIP = ip;
+      state.reportsPage = 1;
+      await fetchReportList();
+    }
+
+    async function fetchReportList() {
+      const { reportsPage: page, reportsIP: ip } = state;
+      const params = new URLSearchParams({ page, pageSize: 30 });
+      if (ip) params.set('ip', ip);
+      const sd = document.getElementById('reportsStartDate').value;
+      const ed = document.getElementById('reportsEndDate').value;
+      if (sd) {
+        params.set('startDate', new Date(sd + 'T00:00:00').toISOString());
+      }
+      if (ed) {
+        params.set('endDate', new Date(ed + 'T23:59:59.999').toISOString());
+      }
+
+      try {
+        const res = await fetch(`/api/results?${params}`);
+        const data = await res.json();
+        renderReportList(data);
+        renderPagination('reportsPagination', data, (p) => {
+          state.reportsPage = p;
+          fetchReportList();
+        });
+      } catch (e) {
+        document.getElementById('reportsList').innerHTML = '<div class="empty-state">加载失败</div>';
+      }
+    }
+
+    function resetReportsFilter() {
+      document.getElementById('reportsSearch').value = '';
+      document.getElementById('reportsStartDate').value = '';
+      document.getElementById('reportsEndDate').value = '';
+      state.reportsPage = 1;
+      state.reportsIP = '';
+      loadReportList();
+    }
+
+    function renderReportList(data) {
+      const container = document.getElementById('reportsList');
+      if (!data.results || data.results.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无数据</div>';
+        return;
+      }
+
+      let html = `<table>
+        <thead><tr><th>时间</th><th>IP 地址</th><th>测速位置</th><th>信息点编号</th><th>下载</th><th>上传</th><th>延迟</th><th>操作</th></tr></thead><tbody>`;
+
+      data.results.forEach(r => {
+        const time = new Date(r.time).toLocaleString('zh-CN');
+        const loc = r.location || '';
+        const pid = r.pointId || '';
+        html += `<tr>
+          <td style="white-space:nowrap;font-size:12px;">${time}</td>
+          <td class="ip-cell">${r.ip}</td>
+          <td style="font-size:12px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(loc)}">${escapeHtml(loc) || '-'}</td>
+          <td style="font-size:12px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(pid)}">${escapeHtml(pid) || '-'}</td>
+          <td><span class="badge badge-dl">${r.downloadSpeed.toFixed(1)} Mbps</span></td>
+          <td><span class="badge badge-ul">${r.uploadSpeed.toFixed(1)} Mbps</span></td>
+          <td><span class="badge badge-ping">${r.ping.toFixed(1)} ms</span></td>
+          <td>
+            <a class="action-btn" href="javascript:void(0)" onclick="viewDetail('${r.id}')">详情</a>
+            <a class="action-btn" href="javascript:void(0)" onclick="window.open('/api/export/html-report/${r.id}','_blank')">HTML 报告</a>
+            <a class="action-btn" href="/api/export/csv?ip=${r.ip}" style="color:#20c997;border-color:#20c997;">CSV</a>
+            <a class="action-btn" href="javascript:void(0)" onclick="exportReport('${r.id}')">PDF</a>
+          </td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // ============================
+    // 详情弹窗
+    // ============================
+    async function viewDetail(id) {
+      const modal = document.getElementById('detailModal');
+      const content = document.getElementById('detailContent');
+      modal.classList.add('active');
+      content.innerHTML = '<div class="empty-state">加载中...</div>';
+
+      try {
+        const res = await fetch(`/api/results/${id}`);
+        const data = await res.json();
+        const r = data.result;
+
+        const grade = r.downloadSpeed >= 900 ? 'A+' : r.downloadSpeed >= 500 ? 'A' : r.downloadSpeed >= 200 ? 'B' : r.downloadSpeed >= 100 ? 'C' : 'D';
+        const quality = r.ping < 1 ? '极佳' : r.ping < 5 ? '优秀' : r.ping < 20 ? '良好' : r.ping < 50 ? '一般' : '较差';
+
+        let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div style="background:#f8f9fa;border-radius:8px;padding:16px;text-align:center;">
+            <div style="font-size:12px;color:#868e96;">下载</div>
+            <div style="font-size:24px;font-weight:bold;color:#339af0;">${r.downloadSpeed.toFixed(1)} <span style="font-size:14px;font-weight:normal;">Mbps</span></div>
+          </div>
+          <div style="background:#f8f9fa;border-radius:8px;padding:16px;text-align:center;">
+            <div style="font-size:12px;color:#868e96;">上传</div>
+            <div style="font-size:24px;font-weight:bold;color:#20c997;">${r.uploadSpeed.toFixed(1)} <span style="font-size:14px;font-weight:normal;">Mbps</span></div>
+          </div>
+          <div style="background:#f8f9fa;border-radius:8px;padding:16px;text-align:center;">
+            <div style="font-size:12px;color:#868e96;">延迟</div>
+            <div style="font-size:24px;font-weight:bold;color:#fcc419;">${r.ping.toFixed(1)} <span style="font-size:14px;font-weight:normal;">ms</span></div>
+          </div>
+          <div style="background:#f8f9fa;border-radius:8px;padding:16px;text-align:center;">
+            <div style="font-size:12px;color:#868e96;">抖动</div>
+            <div style="font-size:24px;font-weight:bold;color:#ff6b6b;">${r.jitter.toFixed(1)} <span style="font-size:14px;font-weight:normal;">ms</span></div>
+          </div>
+        </div>`;
+
+        html += `<table>
+          <tr><th>测速位置</th><td>${r.location || '-'}</td></tr>
+          <tr><th>信息点编号</th><td>${r.pointId || '-'}</td></tr>
+          <tr><th>测试 ID</th><td>${r.id}</td></tr>
+          <tr><th>IP 地址</th><td class="ip-cell">${r.ip}</td></tr>
+          <tr><th>设备 ID</th><td class="ip-cell" style="font-size:11px;">${r.deviceInfo && r.deviceInfo.deviceId ? r.deviceInfo.deviceId.slice(0, 8) + '...' : '未采集'}</td></tr>
+          <tr><th>设备平台</th><td>${r.deviceInfo && r.deviceInfo.platform ? r.deviceInfo.platform : '未知'}</td></tr>
+          <tr><th>测试时间</th><td>${new Date(r.time).toLocaleString('zh-CN')}</td></tr>
+          <tr><th>下载数据量</th><td>${r.dataUsedDL ? r.dataUsedDL.toFixed(2) + ' MB' : '-'}</td></tr>
+          <tr><th>上传数据量</th><td>${r.dataUsedUL ? r.dataUsedUL.toFixed(2) + ' MB' : '-'}</td></tr>
+          <tr><th>综合评级</th><td><span class="badge" style="background:#667eea;color:white;">${grade}</span></td></tr>
+          <tr><th>延迟质量</th><td>${quality}</td></tr>
+          ${r.deviceInfo && r.deviceInfo.cores ? `<tr><th>CPU 核心</th><td>${r.deviceInfo.cores} 核</td></tr>` : ''}
+          ${r.deviceInfo && r.deviceInfo.memory ? `<tr><th>内存</th><td>${r.deviceInfo.memory} GB</td></tr>` : ''}
+          ${r.deviceInfo && r.deviceInfo.timezone ? `<tr><th>时区</th><td>${r.deviceInfo.timezone}</td></tr>` : ''}
+          ${r.deviceInfo && r.deviceInfo.screen ? `<tr><th>屏幕</th><td>${r.deviceInfo.screen}</td></tr>` : ''}
+        </table>`;
+
+        if (data.deviceHistory && data.deviceHistory.length > 0) {
+          html += `<h3 style="font-size:14px;margin:16px 0 8px;color:#764ba2;">同一设备的历史记录（设备 ID: ${(r.deviceInfo && r.deviceInfo.deviceId || '').slice(0, 8)}...）</h3>`;
+          data.deviceHistory.forEach(h => {
+            html += `<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #f1f3f5;">
+              ${new Date(h.time).toLocaleString('zh-CN')} [${h.ip}] → ↓${h.downloadSpeed.toFixed(1)} Mbps ↑${h.uploadSpeed.toFixed(1)} Mbps ${h.ping.toFixed(1)}ms
+            </div>`;
+          });
+        }
+
+        if (data.history && data.history.length > 0) {
+          html += `<h3 style="font-size:14px;margin:16px 0 8px;">同 IP 历史记录</h3>`;
+          data.history.forEach(h => {
+            html += `<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #f1f3f5;">
+              ${new Date(h.time).toLocaleString('zh-CN')} → ↓${h.downloadSpeed.toFixed(1)} Mbps ↑${h.uploadSpeed.toFixed(1)} Mbps ${h.ping.toFixed(1)}ms
+            </div>`;
+          });
+        }
+
+        html += `<div style="margin-top:16px;display:flex;gap:8px;">
+          <button class="action-btn" onclick="exportReport('${r.id}')">导出 PDF</button>
+          <button class="action-btn" style="color:#20c997;" onclick="window.open('/api/export/csv?ip=${r.ip}','_blank')">导出 IP 数据 CSV</button>
+        </div>`;
+
+        content.innerHTML = html;
+      } catch (e) {
+        content.innerHTML = '<div class="empty-state">加载失败</div>';
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('detailModal').classList.remove('active');
+    }
+
+    // ============================
+    // 导出
+    // ============================
+    function exportReport(id) {
+      window.open(`/api/export/report/${id}`, '_blank');
+    }
+
+    function exportAllCSV() {
+      const ip = document.getElementById('resultsSearch').value.trim();
+      const sd = document.getElementById('resultsStartDate').value;
+      const ed = document.getElementById('resultsEndDate').value;
+      let url = ip ? `/api/export/csv?ip=${ip}` : '/api/export/csv';
+      if (sd) url += (url.includes('?') ? '&' : '?') + 'startDate=' + sd;
+      if (ed) url += (url.includes('?') ? '&' : '?') + 'endDate=' + ed;
+      window.open(url, '_blank');
+    }
+
+    // ============================
+    // 修改密码
+    // ============================
+    function openChangePwd() {
+      document.getElementById('changePwdModal').classList.add('active');
+      document.getElementById('oldPwd').value = '';
+      document.getElementById('newPwd').value = '';
+      document.getElementById('changePwdMsg').textContent = '';
+    }
+
+    function closeChangePwd() {
+      document.getElementById('changePwdModal').classList.remove('active');
+    }
+
+    async function changePassword() {
+      const oldPwd = document.getElementById('oldPwd').value;
+      const newPwd = document.getElementById('newPwd').value;
+      const msg = document.getElementById('changePwdMsg');
+
+      if (!oldPwd || !newPwd) {
+        msg.textContent = '请填写完整';
+        return;
+      }
+      if (newPwd.length < 4) {
+        msg.textContent = '新密码至少 4 位';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ oldPassword: oldPwd, newPassword: newPwd }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.style.color = '#2f9e44';
+          msg.textContent = '密码已修改成功';
+          setTimeout(closeChangePwd, 1500);
+        } else {
+          msg.style.color = '#e03131';
+          msg.textContent = data.error;
+        }
+      } catch (e) {
+        msg.textContent = '网络错误';
+      }
+    }
+
+    // ============================
+    // 退出登录
+    // ============================
+    async function logout() {
+      await fetch('/api/logout', { method: 'POST' });
+      window.location.href = '/console/login.html';
+    }
+
+    // ============================
+    // 分页渲染
+    // ============================
+    function renderPagination(containerId, data, onPage) {
+      const container = document.getElementById(containerId);
+      if (data.totalPages <= 1) { container.innerHTML = ''; return; }
+
+      const { page, totalPages, total } = data;
+      let html = `<span class="info">共 ${total} 条，第 ${page}/${totalPages} 页</span>`;
+
+      if (page > 1) html += `<button onclick="onPage(${page - 1})">上一页</button>`;
+      for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
+        html += `<button onclick="onPage(${i})" style="${i === page ? 'background:#667eea;color:white;border-color:#667eea;' : ''}">${i}</button>`;
+      }
+      if (page < totalPages) html += `<button onclick="onPage(${page + 1})">下一页</button>`;
+
+      // 替换全局的 onPage 函数
+      container.innerHTML = html;
+      container.querySelectorAll('button').forEach(btn => {
+        const p = parseInt(btn.textContent);
+        if (!isNaN(p)) btn.onclick = () => onPage(p);
+        else if (btn.textContent.includes('上一页')) btn.onclick = () => onPage(page - 1);
+        else if (btn.textContent.includes('下一页')) btn.onclick = () => onPage(page + 1);
+      });
+    }
+
+    // ============================
+    // 工具
+    // ============================
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ============================
+    // 趋势图表（SVG 绘制）
+    // ============================
+    async function loadTrends() {
+      const days = document.getElementById('trendDays').value;
+      const chartEl = document.getElementById('trendChart');
+      const summaryEl = document.getElementById('trendSummary');
+      const tableEl = document.getElementById('trendTable');
+
+      chartEl.innerHTML = '<div class="empty-state">加载中...</div>';
+      summaryEl.textContent = '';
+
+      try {
+        // 发送客户端时区偏移(分钟)，服务端按本地时区日期分组
+        const tz = -new Date().getTimezoneOffset();
+        const res = await fetch(`/api/trends?days=${days}&tz=${tz}`);
+        const data = await res.json();
+
+        if (!data.trendData || data.trendData.length < 1) {
+          chartEl.innerHTML = '<div class="empty-state">暂无趋势数据，请先完成测速</div>';
+          return;
+        }
+
+        const trendData = data.trendData;
+        const dates = trendData.map(d => d.date);
+        const dlValues = trendData.map(d => d.avgDL);
+        const ulValues = trendData.map(d => d.avgUL);
+        const pingValues = trendData.map(d => d.avgPing);
+        const jitterValues = trendData.map(d => d.avgJitter);
+
+        const maxSpeed = Math.max(...dlValues, ...ulValues) * 1.15 || 1;
+        const maxMs = Math.max(...pingValues, ...jitterValues) * 1.25 || 1;
+
+        const W = chartEl.clientWidth || 800;
+        const H = 360;
+        const PAD = { top: 28, right: 48, bottom: 44, left: 56 };
+        const iw = W - PAD.left - PAD.right;
+        const ih = H - PAD.top - PAD.bottom;
+
+        const xMap = (i) => PAD.left + (i / Math.max(1, dates.length - 1)) * iw;
+        const ySpeed = (v) => PAD.top + ih - (v / maxSpeed) * ih;
+        const yMs = (v) => PAD.top + ih - (v / maxMs) * ih;
+
+        const METRICS = [
+          { id: 'dl', label: '下载速度', vals: dlValues, yFn: ySpeed, color: '#339af0', unit: 'Mbps', fmt: (v) => v.toFixed(1) },
+          { id: 'ul', label: '上传速度', vals: ulValues, yFn: ySpeed, color: '#20c997', unit: 'Mbps', fmt: (v) => v.toFixed(1) },
+          { id: 'ping', label: '延迟', vals: pingValues, yFn: yMs, color: '#fcc419', unit: 'ms', fmt: (v) => v.toFixed(v >= 10 ? 0 : 1) },
+          { id: 'jitter', label: '抖动', vals: jitterValues, yFn: yMs, color: '#ff6b6b', unit: 'ms', fmt: (v) => v.toFixed(1) },
+        ];
+
+        // ====== 构建 SVG ======
+        let svg = `<svg width="${W}" height="${H}" style="font-family:system-ui,sans-serif;font-size:11px;display:block;">`;
+
+        // 网格线
+        for (let i = 0; i <= 5; i++) {
+          const y = PAD.top + (i / 5) * ih;
+          svg += `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="#f1f3f5" stroke-width="1"/>`;
+        }
+
+        // 左 Y 轴 (Mbps)
+        for (let i = 0; i <= 5; i++) {
+          const v = maxSpeed - (i / 5) * maxSpeed;
+          const y = PAD.top + (i / 5) * ih;
+          svg += `<text x="${PAD.left - 8}" y="${y + 4}" text-anchor="end" fill="#868e96" font-size="10">${v >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 0 : 1) + 'k' : v.toFixed(0)}</text>`;
+        }
+        svg += `<text x="14" y="${PAD.top + ih / 2}" text-anchor="middle" fill="#868e96" font-size="10" transform="rotate(-90,14,${PAD.top + ih / 2})">Mbps</text>`;
+
+        // 右 Y 轴 (ms)
+        for (let i = 0; i <= 5; i++) {
+          const v = maxMs - (i / 5) * maxMs;
+          const y = PAD.top + (i / 5) * ih;
+          svg += `<text x="${W - PAD.right + 8}" y="${y + 4}" text-anchor="start" fill="#868e96" font-size="10">${v >= 10 ? v.toFixed(0) : v.toFixed(1)}</text>`;
+        }
+        svg += `<text x="${W - 10}" y="${PAD.top + ih / 2}" text-anchor="middle" fill="#868e96" font-size="10" transform="rotate(90,${W - 10},${PAD.top + ih / 2})">ms</text>`;
+
+        // 绘制 4 条折线 + 数据点
+        METRICS.forEach(m => {
+          const pts = m.vals.map((v, i) => `${xMap(i)},${m.yFn(v)}`).join(' ');
+          svg += `<polyline fill="none" stroke="${m.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${pts}" opacity="0.85"/>`;
+          m.vals.forEach((v, i) => {
+            svg += `<circle cx="${xMap(i)}" cy="${m.yFn(v)}" r="3" fill="#fff" stroke="${m.color}" stroke-width="1.5"/>`;
+          });
+        });
+
+        // X 轴日期标签
+        const xLabelCount = Math.min(dates.length, Math.floor(iw / 80));
+        const xStep = Math.max(1, Math.floor(dates.length / xLabelCount));
+        for (let i = 0; i < dates.length; i += xStep) {
+          svg += `<text x="${xMap(i)}" y="${H - PAD.bottom + 18}" text-anchor="middle" fill="#868e96" font-size="11">${dates[i].slice(5)}</text>`;
+        }
+
+        // 图例
+        const legendX = PAD.left;
+        const legendY = H - 6;
+        METRICS.forEach((m, i) => {
+          const lx = legendX + i * (iw / 4);
+          svg += `<rect x="${lx}" y="${legendY - 8}" width="12" height="3" rx="1.5" fill="${m.color}"/>`;
+          svg += `<text x="${lx + 16}" y="${legendY - 5}" fill="#495057" font-size="10">${m.label}</text>`;
+        });
+
+        // 竖线指示器（鼠标悬停时显示）
+        svg += `<line id="trendIndicator" x1="0" y1="${PAD.top}" x2="0" y2="${PAD.top + ih}" stroke="#667eea" stroke-width="1" stroke-dasharray="4,3" opacity="0" style="pointer-events:none;"/>`;
+
+        svg += '</svg>';
+
+        // Tooltip 浮窗
+        const tooltipHTML = `<div id="trendTooltip" style="display:none;position:absolute;pointer-events:none;background:rgba(255,255,255,0.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,0.13);padding:10px 14px;font-size:13px;line-height:1.6;z-index:10;border:1px solid rgba(0,0,0,0.05);min-width:160px;font-family:system-ui,sans-serif;"></div>`;
+
+        chartEl.innerHTML = svg + tooltipHTML;
+
+        // ====== 鼠标交互 ======
+        const chartData = { trendData, dates, PAD, iw, maxSpeed, maxMs, xMap, ySpeed, yMs, METRICS };
+
+        chartEl.onmousemove = function(e) {
+          const rect = this.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+          const cd = chartData;
+
+          // 检查是否在绘图区域内
+          if (mx < cd.PAD.left || mx > W - cd.PAD.right || my < cd.PAD.top || my > H - cd.PAD.bottom - 8) {
+            chartLeave();
+            return;
+          }
+
+          const idx = Math.round((mx - cd.PAD.left) / cd.iw * (cd.trendData.length - 1));
+          const ci = Math.max(0, Math.min(cd.trendData.length - 1, idx));
+          const d = cd.trendData[ci];
+
+          const tooltip = document.getElementById('trendTooltip');
+          if (!tooltip) return;
+
+          // 自动定位：避免超出画布
+          let tx = cd.xMap(ci) + 14;
+          let ty = Math.max(6, cd.ySpeed(d.avgDL) - 55);
+          if (tx + 200 > W) tx = cd.xMap(ci) - 214;
+          if (ty + 140 > H) ty = H - 146;
+
+          tooltip.style.display = 'block';
+          tooltip.style.left = tx + 'px';
+          tooltip.style.top = ty + 'px';
+          tooltip.innerHTML = `
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px;color:#212529;">${d.date}</div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:0 10px;font-size:13px;color:#495057;white-space:nowrap;">
+              <span style="color:#339af0;">●</span><span>下载 <strong>${d.avgDL.toFixed(1)}</strong> Mbps</span>
+              <span style="color:#20c997;">●</span><span>上传 <strong>${d.avgUL.toFixed(1)}</strong> Mbps</span>
+              <span style="color:#fcc419;">●</span><span>延迟 <strong>${d.avgPing.toFixed(d.avgPing >= 10 ? 0 : 1)}</strong> ms</span>
+              <span style="color:#ff6b6b;">●</span><span>抖动 <strong>${d.avgJitter.toFixed(1)}</strong> ms</span>
+            </div>
+            <div style="font-size:11px;color:#868e96;margin-top:3px;border-top:1px solid #f1f3f5;padding-top:3px;">测试 ${d.count} 次 · 峰值 ${d.maxDL.toFixed(1)} Mbps</div>
+          `;
+
+          const ind = document.getElementById('trendIndicator');
+          if (ind) {
+            ind.setAttribute('x1', cd.xMap(ci));
+            ind.setAttribute('x2', cd.xMap(ci));
+            ind.setAttribute('opacity', '0.5');
+          }
+        };
+
+        chartEl.onmouseleave = chartLeave;
+
+        // ====== 统计概览 ======
+        const avgDL = dlValues.reduce((a, b) => a + b, 0) / dlValues.length;
+        const avgUL = ulValues.reduce((a, b) => a + b, 0) / ulValues.length;
+        const avgPing = pingValues.reduce((a, b) => a + b, 0) / pingValues.length;
+        const avgJitter = jitterValues.reduce((a, b) => a + b, 0) / jitterValues.length;
+        summaryEl.innerHTML = `
+          平均下载: <strong style="color:#339af0;">${avgDL.toFixed(1)}</strong> Mbps ·
+          平均上传: <strong style="color:#20c997;">${avgUL.toFixed(1)}</strong> Mbps ·
+          平均延迟: <strong style="color:#fcc419;">${avgPing.toFixed(1)}</strong> ms ·
+          平均抖动: <strong style="color:#ff6b6b;">${avgJitter.toFixed(1)}</strong> ms ·
+          数据量: ${data.filteredCount} 条
+        `;
+
+        // ====== 数据表格 ======
+        let tblHtml = `<table>
+          <thead><tr><th>日期</th><th>平均下载</th><th>平均上传</th><th>平均延迟</th><th>平均抖动</th><th>最高下载</th><th>最低下载</th><th>测试次数</th></tr></thead><tbody>`;
+        trendData.forEach(d => {
+          tblHtml += `<tr>
+            <td style="font-size:12px;">${d.date}</td>
+            <td><span class="badge badge-dl">${d.avgDL} Mbps</span></td>
+            <td><span class="badge badge-ul">${d.avgUL} Mbps</span></td>
+            <td><span class="badge badge-ping">${d.avgPing} ms</span></td>
+            <td>${d.avgJitter} ms</td>
+            <td>${d.maxDL} Mbps</td>
+            <td>${d.minDL} Mbps</td>
+            <td>${d.count}</td>
+          </tr>`;
+        });
+        tblHtml += '</tbody></table>';
+        tableEl.innerHTML = tblHtml;
+
+      } catch (e) {
+        chartEl.innerHTML = '<div class="empty-state">加载趋势数据失败</div>';
+      }
+    }
+
+    function chartLeave() {
+      const tooltip = document.getElementById('trendTooltip');
+      if (tooltip) tooltip.style.display = 'none';
+      const ind = document.getElementById('trendIndicator');
+      if (ind) ind.setAttribute('opacity', '0');
+    }
+
+    // ============================
+    // 数据管理
+    // ============================
+    async function loadManageStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('manageStats').innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+            <div style="background:#f8f9fa;border-radius:8px;padding:14px;text-align:center;">
+              <div style="font-size:12px;color:#868e96;">测速数据</div>
+              <div style="font-size:22px;font-weight:bold;color:#339af0;">${data.totalTests}</div>
+              <div style="font-size:11px;color:#adb5bd;">条记录</div>
+            </div>
+            <div style="background:#f8f9fa;border-radius:8px;padding:14px;text-align:center;">
+              <div style="font-size:12px;color:#868e96;">访问日志</div>
+              <div style="font-size:22px;font-weight:bold;color:#20c997;">${data.totalVisits}</div>
+              <div style="font-size:11px;color:#adb5bd;">条记录</div>
+            </div>
+            <div style="background:#f8f9fa;border-radius:8px;padding:14px;text-align:center;">
+              <div style="font-size:12px;color:#868e96;">独立 IP</div>
+              <div style="font-size:22px;font-weight:bold;color:#764ba2;">${data.uniqueIPs}</div>
+              <div style="font-size:11px;color:#adb5bd;">个</div>
+            </div>
+            <div style="background:#f8f9fa;border-radius:8px;padding:14px;text-align:center;">
+              <div style="font-size:12px;color:#868e96;">今日测试</div>
+              <div style="font-size:22px;font-weight:bold;color:#f59f00;">${data.recentTests}</div>
+              <div style="font-size:11px;color:#adb5bd;">过去 24 小时</div>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        document.getElementById('manageStats').innerHTML = '<div class="empty-state">加载失败</div>';
+      }
+    }
+
+    async function cleanupData() {
+      const days = parseInt(document.getElementById('cleanupDays').value);
+      const resultEl = document.getElementById('cleanupResult');
+
+      if (!confirm(`确认清理 ${days} 天前的所有数据？此操作不可撤销！`)) return;
+      if (!confirm(`最后确认：将永久删除 ${days} 天前的测速记录和访问日志。确定继续？`)) return;
+
+      resultEl.textContent = '正在清理...';
+      resultEl.style.color = '#868e96';
+
+      try {
+        const res = await fetch('/api/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ days }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          resultEl.innerHTML = `
+            ✅ 清理完成！<br>
+            移除测速记录: <strong>${data.removedResults}</strong> 条<br>
+            移除访问日志: <strong>${data.removedLogs}</strong> 条<br>
+            剩余测速记录: <strong>${data.remainingResults}</strong> 条<br>
+            剩余访问日志: <strong>${data.remainingLogs}</strong> 条
+          `;
+          resultEl.style.color = '#2f9e44';
+          loadManageStats();
+        } else {
+          resultEl.textContent = '清理失败: ' + (data.error || '未知错误');
+          resultEl.style.color = '#e03131';
+        }
+      } catch (e) {
+        resultEl.textContent = '清理失败: 网络错误';
+        resultEl.style.color = '#e03131';
+      }
+    }
+
+    async function resetAllData() {
+      const resultEl = document.getElementById('resetResult');
+
+      if (!confirm('⚠ 确定要重置所有数据？此操作将永久删除全部测速记录、访问日志和设备信息！')) return;
+      if (!confirm('最后确认：所有数据将被永久删除且无法恢复！确定继续？')) return;
+      const code = prompt('请输入 "RESET" 确认重置操作（不区分大小写）：');
+      if (!code || code.toUpperCase() !== 'RESET') {
+        resultEl.textContent = '确认码错误，已取消重置';
+        resultEl.style.color = '#e03131';
+        return;
+      }
+
+      resultEl.textContent = '正在重置所有数据...';
+      resultEl.style.color = '#868e96';
+
+      try {
+        const res = await fetch('/api/clear-all', { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          resultEl.innerHTML = `
+            ✅ 已重置所有数据！<br>
+            已删除测速记录: <strong>${data.removedResults}</strong> 条<br>
+            已删除访问日志: <strong>${data.removedLogs}</strong> 条
+          `;
+          resultEl.style.color = '#e03131';
+          // 刷新统计数据
+          loadManageStats();
+          loadStats();
+        } else {
+          resultEl.textContent = '重置失败: ' + (data.error || '未知错误');
+          resultEl.style.color = '#e03131';
+        }
+      } catch (e) {
+        resultEl.textContent = '重置失败: 网络错误';
+        resultEl.style.color = '#e03131';
+      }
+    }
+
+    // 点击弹窗外部关闭
+    document.getElementById('detailModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+    document.getElementById('changePwdModal').addEventListener('click', function(e) {
+      if (e.target === this) closeChangePwd();
+    });
+  </script>
+
+  <!-- ============================ -->
+  <!-- 底部信息 -->
+  <!-- ============================ -->
+  <footer style="
+    text-align: center;
+    padding: 20px 24px;
+    font-size: 12px;
+    color: #adb5bd;
+    border-top: 1px solid #e9ecef;
+    margin-top: 8px;
+    line-height: 1.8;
+  ">
+    <div>
+      <a href="https://github.com/ctfwubai" target="_blank" style="color:#667eea;text-decoration:none;font-weight:500;">CTF_无白</a>
+      &nbsp;&middot;&nbsp;
+      <a href="https://github.com/ctfwubai" target="_blank" style="color:#667eea;text-decoration:none;">GitHub 项目地址</a>
+    </div>
+    <div style="margin-top:2px;">企业内网测速系统 v2.0</div>
+  </footer>
+</body>
+</html>

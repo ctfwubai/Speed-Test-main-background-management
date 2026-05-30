@@ -1,0 +1,17 @@
+{
+  "name": "intranet-speedtest",
+  "version": "2.1.0",
+  "description": "企业内网测速系统 - 带密码保护、访问日志和专业报告",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "admin-reset": "node server.js --reset-admin"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.10.0",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "pdfkit": "^0.16.0"
+  }
+}
