@@ -9,6 +9,9 @@
 <img width="1885" height="955" alt="7" src="https://github.com/user-attachments/assets/72d82749-3089-4f1a-a0b6-ca44549e0bc3" />
 <img width="1901" height="952" alt="8" src="https://github.com/user-attachments/assets/90a21461-5ad1-42fa-8733-8fd8a7bc92cb" />
 
+支持PDF报告导出
+<img width="754" height="931" alt="image" src="https://github.com/user-attachments/assets/e033b7af-3528-4595-b40b-c567602a7f82" />
+
 
 > **作者：CTF_无白** [https://github.com/ctfwubai](https://github.com/ctfwubai)
 
